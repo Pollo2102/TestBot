@@ -43,6 +43,15 @@ client.on('message', msg => {
     msg.channel.send("The new prefix \'" + newPrefix + "\' has been set!");
   }
 
+  if (msg.content.startsWith(prefix + "oso"))
+  {
+  	let randNumb = Math.floor((Math.random() * 100) + 1);
+  	if (randNumb % 2 == 0)
+  		msg.channel.send(":bear: Go for it!!!:bear:");
+  	else
+  		msg.channel.send("No. :japanese_goblin:");
+  }
+
 });
 
 client.login(token);
