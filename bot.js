@@ -24,7 +24,8 @@ client.on('message', msg => {
 
   //Lists all the available commands
   if (msg.content.startsWith(prefix + "help"))
-  	msg.channel.send(`\`${prefix}ping - Pings the server\n${prefix}prefix - Changes the bot's prefix\n\``);
+  	msg.channel.send(`\`${prefix}ping - Pings the server\n${prefix}prefix - Changes the bot's prefix\n\`
+  		${prefix}oso - Bot helps you decide with a yes or no answer`);
 
   //Pings the bot and returns the latency in milliseconds
   if (msg.content.startsWith(prefix + "ping"))
@@ -43,6 +44,7 @@ client.on('message', msg => {
     msg.channel.send("The new prefix \'" + newPrefix + "\' has been set!");
   }
 
+  //function that generates a random number and outputs a yes or no answer
   if (msg.content.startsWith(prefix + "oso"))
   {
   	let randNumb = Math.floor((Math.random() * 100) + 1);
