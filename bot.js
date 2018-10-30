@@ -24,8 +24,7 @@ client.on('message', msg => {
 
   //Lists all the available commands
   if (msg.content.startsWith(prefix + "help"))
-  	msg.channel.send(`\`${prefix}ping - Pings the server\n${prefix}prefix - Changes the bot's prefix\n\`
-  		${prefix}oso - Bot helps you decide with a yes or no answer`);
+  	msg.channel.send(`\`${prefix}ping - Pings the server\n${prefix}prefix - Changes the bot's prefix\n${prefix}oso - Bot helps you decide with a yes or no answer\``);
 
   //Pings the bot and returns the latency in milliseconds
   if (msg.content.startsWith(prefix + "ping"))
