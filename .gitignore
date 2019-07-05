@@ -1,2 +1,5 @@
 /token.json
 /node_modules
+/.vscode
+/.git
+yt-reqs.js

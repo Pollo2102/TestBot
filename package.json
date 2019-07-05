@@ -6,6 +6,12 @@
 	"author": "Pollo",
 	"dependencies": {
 		"discord.io": "https://github.com/woor/discord.io/tarball/gateway_v6",
-		"winston": "^3.1.0"
+		"discord.js": "^11.5.1",
+		"gapi-client": "0.0.3",
+		"googleapis": "^40.0.1",
+		"node-opus": "^0.3.2",
+		"opusscript": "0.0.6",
+		"winston": "^3.1.0",
+		"ytdl-core": "^0.29.2"
 	}
 }
