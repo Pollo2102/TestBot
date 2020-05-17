@@ -5,18 +5,18 @@ const Discord = require('discord.js');
 const data = require('./token.json');
 /* bot-config.json is a file that contains important information for the 
 bot's functions to work properly */
-const config = require('./bot-config.json');
+const config = require('../config/bot-config.json');
 const fs = require('fs');
 const client = new Discord.Client();
 const ytdl = require('ytdl-core'); // API used to reproduce audio
-const opus = require('node-opus');
+// const opus = require('node-opus');
 
 const token = data.token;
 const API_KEY = data.ytkey;
 
 let prefix = config.prefix;
 
-let youtube = google.youtube({
+let youtube =  google.youtube({
   version: 'v3',
   auth: `${API_KEY}`
 });
@@ -92,20 +92,20 @@ client.on('message', msg => {
         //console.log(data.items[0].id.videoId);
         results = data.data;  
         
-        const streamOptions = { seek: 0, volume: 1 };
-        const vChannel = msg.member.voiceChannel;
+        const streamOptions = { seek: 0, volume: 3 };
+        const vChannel = msg.member.voice.channel;
         vChannel.join()
           .then(connection => {
             const stream = ytdl(`https://www.youtube.com/watch?v=${data.data.items[0].id.videoId}`, { filter : 'audioonly' });
-            const dispatcher = connection.playStream(stream, streamOptions);
+            const dispatcher = connection.play(stream, streamOptions);
           })
-          .catch(console.error);
+          .catch(err => console.error(err));
       }
     });    
   }
 
   if ((msg.content === (prefix + "leave")) && (ArgCount(msg.content)))
-    msg.guild.me.setVoiceChannel(null);
+    msg.member.voice.channel.leave();
     
 
 
@@ -129,4 +129,10 @@ class parameters{
   parameters(){};
 }
 
-client.login(token);
+let discordLogin = (login) => {
+  return new Promise((resolve, reject) => {
+    client.login(token);
+  })
+}
+
+client.login(token).catch(err => console.log(`Invalid code: ${token} \n ${err}`));
