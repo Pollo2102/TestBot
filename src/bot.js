@@ -41,7 +41,7 @@ client.on('message', msg => {
 
   //Lists all the available commands
   if ((msg.content === (prefix + 'help')) && (ArgCount(msg.content) == 1))
-  	msg.channel.send(`\`${prefix}ping - Pings the server\n${prefix}prefix - Changes the bot's prefix\n${prefix}oso - Bot helps you decide with a yes or no answer\n${prefix}time - Prints the current time\n${prefix}play - Searches a song on Youtube and plays it on a Voice Channel\n${prefix}leave - Kicks the bot from its current voice channel\n${prefix}waifus - Configures automatic waifu rolling the current channel.\``);
+  	msg.channel.send(`\`${prefix}ping - Pings the server\n${prefix}prefix - Changes the bot's prefix\n${prefix}oso - Bot helps you decide with a yes or no answer\n${prefix}time - Prints the current time\n${prefix}play - Searches a song on Youtube and plays it on a Voice Channel\n${prefix}leave - Kicks the bot from its current voice channel\n${prefix}waifus - Configures automatic waifu rolling the current channel.\n${prefix}coin - Flips a coin.\``);
 
   //Pings the bot and returns the latency in milliseconds
   if ((msg.content === (prefix + 'ping')) && (ArgCount(msg.content) == 1))
@@ -114,6 +114,15 @@ client.on('message', msg => {
   }
   else if ((msg.content === (prefix + "waifus")) && ArgCount(msg.content) == 1) {
     msg.channel.send(`Format is \`waifus <"enable"/"disable"> <rolls per hour>\``);
+  }
+
+  if ((msg.content === (prefix + "coin")) && (ArgCount(msg.content) == 1)) {
+    let randNumb = Math.floor((Math.random() * 100) + 1);
+    
+      if (randNumb % 2 == 0)
+          msg.channel.send("Heads :coin: ");
+      else
+          msg.channel.send("Tails :coin: ");
   }
 
   if ((msg.content.startsWith(prefix + "play")) && (ArgCount(msg.content)) > 1) {
