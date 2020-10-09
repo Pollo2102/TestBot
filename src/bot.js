@@ -16,6 +16,9 @@ const API_KEY = data.ytkey;
 
 let prefix = config.prefix;
 
+let waifu_inter = new Map();
+let channels = new Map();
+
 let youtube =  google.youtube({
   version: 'v3',
   auth: `${API_KEY}`
@@ -38,7 +41,7 @@ client.on('message', msg => {
 
   //Lists all the available commands
   if ((msg.content === (prefix + 'help')) && (ArgCount(msg.content) == 1))
-  	msg.channel.send(`\`${prefix}ping - Pings the server\n${prefix}prefix - Changes the bot's prefix\n${prefix}oso - Bot helps you decide with a yes or no answer\n${prefix}time - Prints the current time\n${prefix}play - Searches a song on Youtube and plays it on a Voice Channel\n${prefix}leave - Kicks the bot from its current voice channel\``);
+  	msg.channel.send(`\`${prefix}ping - Pings the server\n${prefix}prefix - Changes the bot's prefix\n${prefix}oso - Bot helps you decide with a yes or no answer\n${prefix}time - Prints the current time\n${prefix}play - Searches a song on Youtube and plays it on a Voice Channel\n${prefix}leave - Kicks the bot from its current voice channel\n${prefix}waifus - Configures automatic waifu rolling the current channel.\``);
 
   //Pings the bot and returns the latency in milliseconds
   if ((msg.content === (prefix + 'ping')) && (ArgCount(msg.content) == 1))
@@ -67,10 +70,50 @@ client.on('message', msg => {
   		msg.channel.send("No. :japanese_goblin:");
   }
 
-  //Function that prints the current time.
+  // Function that prints the current time.
   if ((msg.content === (prefix + "time")) && (ArgCount(msg.content)) == 1) {
     let currDate = new Date();
+    currDate.setHours(currDate.getUTCHours() - 6)
     msg.channel.send(`Current time is: ${currDate}`);
+  }
+
+  // Function that enables waifu rolling with the specified timing
+  // Format = "waifus <enable/disable> <rolls per hour>"
+  if ((msg.content.startsWith(prefix + "waifus") && (ArgCount(msg.content)) > 1 && (ArgCount(msg.content)) <= 3)) {
+    let MsgArgs = msg.content.split(' ');
+
+    if (MsgArgs[1] == "enable") {
+      if (ArgCount(msg.content) == 3) {
+        if (parseInt(MsgArgs[2]) <= 60) {
+          channels.set(msg.channel.name, msg.channel);
+          waifu_inter.set(msg.channel.name, setInterval(() => {
+            msg.channel.send("$wa");
+          }
+          , 3600 / parseInt(MsgArgs[2]) * 1000));
+        }
+        else {
+          msg.channel.send("Please enter a number that is less than 60.");
+        }
+      } 
+      else {
+        msg.channel.send(`Format is \`waifus <"enable"/"disable"> <rolls per hour>\``);
+      }
+    }
+    if (MsgArgs[1] == "disable") {
+      if (ArgCount(msg.content) == 2 && waifu_inter.get(msg.channel.name)) {
+        if (waifu_inter.get(msg.channel.name) === undefined) {
+          msg.channel.send("Rolling not configured in this channel!\n");
+        }
+        else {
+          clearInterval(waifu_inter.get(msg.channel.name));
+          waifu_inter.delete(msg.channel.name);
+        }
+
+      }
+    }
+  }
+  else if ((msg.content === (prefix + "waifus")) && ArgCount(msg.content) == 1) {
+    msg.channel.send(`Format is \`waifus <"enable"/"disable"> <rolls per hour>\``);
   }
 
   if ((msg.content.startsWith(prefix + "play")) && (ArgCount(msg.content)) > 1) {
@@ -84,20 +127,25 @@ client.on('message', msg => {
       q: `${searchParam}`,
       order: 'viewCount',
       maxResults: '10'
-    }, function (err, data) {
+    }, (err, data) => {
       if (err) {
         console.error(err);
       }
       if (data) {
-        //console.log(data.items[0].id.videoId);
+        // console.log(data.data.items[0].id.videoId);
+        // console.log(data.data.items);
         results = data.data;  
         
-        const streamOptions = { seek: 0, volume: 3 };
+        const streamOptions = { seek: 0, volume: 1 };
         const vChannel = msg.member.voice.channel;
+        if (!vChannel) msg.channel.send("You need to be in a voice channel to execute this command.")
+
+
         vChannel.join()
           .then(connection => {
             const stream = ytdl(`https://www.youtube.com/watch?v=${data.data.items[0].id.videoId}`, { filter : 'audioonly' });
-            const dispatcher = connection.play(stream, streamOptions);
+            stream.on('error', console.error)
+            connection.play(stream, streamOptions)
           })
           .catch(err => console.error(err));
       }
