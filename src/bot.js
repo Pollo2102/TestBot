@@ -1,14 +1,17 @@
 const {google} = require('googleapis');
 
-const Discord = require('discord.js');
+const { Discord, Intents, Client, VoiceChannel } = require('discord.js');
+const { joinVoiceChannel, createAudioPlayer, createAudioResource, NoSubscriberBehavior } = require('@discordjs/voice');
 /* token.js is a file that contains the private key required to host the bot */
 const data = require('./token.json');
 /* bot-config.json is a file that contains important information for the 
 bot's functions to work properly */
 const config = require('../config/bot-config.json');
 const fs = require('fs');
-const client = new Discord.Client();
+const client = new Client({ intents: [Intents.FLAGS.GUILDS]});
 const ytdl = require('ytdl-core'); // API used to reproduce audio
+const play = require('play-dl');
+const { channel } = require('diagnostics_channel');
 // const opus = require('node-opus');
 
 const token = data.token;
@@ -45,7 +48,7 @@ client.on('message', msg => {
 
   //Pings the bot and returns the latency in milliseconds
   if ((msg.content === (prefix + 'ping')) && (ArgCount(msg.content) == 1))
-  	msg.channel.send(`Bot ping is: \`${client.ping}ms\` :ping_pong:`);
+  	msg.channel.send(`Bot ping is: \`${client.ws.ping}ms\` :ping_pong:`);
 
   //Function that changes the bot's prefix through user input
   if ((msg.content === (prefix + 'prefix')) && (ArgCount(msg.content) == 2) && (msg.member.permissions.has('MANAGE_GUILD', 1))) {
@@ -85,35 +88,52 @@ client.on('message', msg => {
     if (MsgArgs[1] == "enable") {
       if (ArgCount(msg.content) == 3) {
         if (parseInt(MsgArgs[2]) <= 60) {
-          channels.set(msg.channel.name, msg.channel);
-          waifu_inter.set(msg.channel.name, setInterval(() => {
-            msg.channel.send("$wa");
+          if (waifu_inter.get(msg.channel.name) === undefined) {
+            channels.set(msg.channel.name, parseInt(MsgArgs[2]));
+            waifu_inter.set(msg.channel.name, setInterval(() => {
+              msg.channel.send("$wa");
+            }
+            , 3600 / parseInt(MsgArgs[2]) * 1000));
+            msg.channel.send(`Rolling configured with interval: ${MsgArgs[2]} times per hour.`);
           }
-          , 3600 / parseInt(MsgArgs[2]) * 1000));
+          else {
+            msg.channel.send(`Command already enabled in this channel. Current frequency: ${channels.get(msg.channel.name)}`);
+            clearInterval(waifu_inter.get(msg.channel.name));
+            waifu_inter.delete(msg.channel.name);
+            channels.delete(msg.channel.name);
+            channels.set(msg.channel.name, parseInt(MsgArgs[2]));
+            waifu_inter.set(msg.channel.name, setInterval(() => {
+              msg.channel.send("$wa");
+            }
+            , 3600 / parseInt(MsgArgs[2]) * 1000));
+            msg.channel.send(`Rolling configured with \`new\` interval: ${MsgArgs[2]} times per hour.`);
+          }
         }
         else {
           msg.channel.send("Please enter a number that is less than 60.");
         }
       } 
       else {
-        msg.channel.send(`Format is \`waifus <"enable"/"disable"> <rolls per hour>\``);
+        msg.channel.send(`Format is \`waifus <"enable"/"disable"> <rolls per hour>\nExample: waifus enable 10\``);
       }
     }
     if (MsgArgs[1] == "disable") {
-      if (ArgCount(msg.content) == 2 && waifu_inter.get(msg.channel.name)) {
+      if (ArgCount(msg.content) == 2) {
         if (waifu_inter.get(msg.channel.name) === undefined) {
           msg.channel.send("Rolling not configured in this channel!\n");
         }
         else {
           clearInterval(waifu_inter.get(msg.channel.name));
           waifu_inter.delete(msg.channel.name);
+          channels.delete(msg.channel.name);
+          msg.channel.send(`Rolling disabled in current channel.`);
         }
 
       }
     }
   }
   else if ((msg.content === (prefix + "waifus")) && ArgCount(msg.content) == 1) {
-    msg.channel.send(`Format is \`waifus <"enable"/"disable"> <rolls per hour>\``);
+    msg.channel.send(`Format is \`waifus <"enable"/"disable"> <rolls per hour>\nExample: waifus enable 10\``);
   }
 
   if ((msg.content === (prefix + "coin")) && (ArgCount(msg.content) == 1)) {
@@ -125,6 +145,7 @@ client.on('message', msg => {
           msg.channel.send("Tails :coin: ");
   }
 
+  // Play Youtube songs
   if ((msg.content.startsWith(prefix + "play")) && (ArgCount(msg.content)) > 1) {
     let searchParam = msg.content.split(' ');
     searchParam.shift();
@@ -148,15 +169,43 @@ client.on('message', msg => {
         const streamOptions = { seek: 0, volume: 1 };
         const vChannel = msg.member.voice.channel;
         if (!vChannel) msg.channel.send("You need to be in a voice channel to execute this command.")
+        const vChannelID = msg.member.voice.channelId;
+        // const stream = ytdl(`https://www.youtube.com/watch?v=${data.data.items[0].id.videoId}`, { filter : 'audioonly' });
+        play.stream(`https://www.youtube.com/watch?v=${data.data.items[0].id.videoId}`, { seek: 0, volume: 1 }).then(stream => {
+  
+          // const player = createAudioPlayer();
+  
+          const connection = joinVoiceChannel({
+            channelId: vChannelID,
+            guildId: vChannel.guild.id,
+            adapterCreator: vChannel.guild.voiceAdapterCreator
+          });
 
-
-        vChannel.join()
-          .then(connection => {
-            const stream = ytdl(`https://www.youtube.com/watch?v=${data.data.items[0].id.videoId}`, { filter : 'audioonly' });
-            stream.on('error', console.error)
-            connection.play(stream, streamOptions)
+          let resource = createAudioResource(stream.stream, {
+            inputType: stream.type
+          });
+          
+          let player = createAudioPlayer({
+            behaviors: {
+              noSubscriber: NoSubscriberBehavior.Play
+            }
           })
-          .catch(err => console.error(err));
+
+          player.play(resource);
+  
+          connection.subscribe(player);
+
+        }).catch(e => console.error(e));
+
+
+
+        // vChannel.join()
+        //   .then(connection => {
+        //     const stream = ytdl(`https://www.youtube.com/watch?v=${data.data.items[0].id.videoId}`, { filter : 'audioonly' });
+        //     stream.on('error', console.error)
+        //     connection.play(stream, streamOptions)
+        //   })
+        //   .catch(err => console.error(err));
       }
     });    
   }
